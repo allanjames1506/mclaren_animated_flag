@@ -1,0 +1,20 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+.DS_Store
+
+# ignore dataset folder and subfolders
+00_raw_data/
+01_tidy_data/
+03_plots/
+04_gifs/
+
+# other file types
+*.pptx
+*.html
+*.bib
+*.txt
+*.png
+*.otf
+*.svg
