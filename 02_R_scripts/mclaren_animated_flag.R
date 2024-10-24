@@ -14,6 +14,8 @@ library(here)
 library(png)
 library(ggimage)
 library(ggfx)
+library(here)
+library(magick)
 
 # 3 Fonts----
 font_add_google("Rubik","rubik")
@@ -28,9 +30,9 @@ showtext_opts(dpi = 320)
 # sysfonts::font_add(family = "Font Awesome 6 Brands",
 #                    regular = "./00_raw_data/fonts/otfs/Font Awesome 6 Brands-Regular-400.otf")
 
-font_add('fa-brands', "./00_raw_data/fonts/otfs/Font Awesome 6 Brands-Regular-400.otf")
-font_add('fa-reg', "./00_raw_data/fonts/otfs/Font Awesome 6 Free-Regular-400.otf")
-font_add('fa-solid', "./00_raw_data/fonts/otfs/Font Awesome 6 Free-Solid-400.otf")
+# font_add('fa-brands', "./00_raw_data/fonts/otfs/Font Awesome 6 Brands-Regular-400.otf")
+# font_add('fa-reg', "./00_raw_data/fonts/otfs/Font Awesome 6 Free-Regular-400.otf")
+# font_add('fa-solid', "./00_raw_data/fonts/otfs/Font Awesome 6 Free-Solid-400.otf")
 
 # loadfonts()
 # ft <- fonttable()
@@ -64,7 +66,7 @@ p_mclaren_rescale <- grid_mclaren_simple_rescale %>%
   geom_point(color = '#FF8000')
 
 # 5 Patterns----
-# 5.1* 1st pattern----
+# *5.1 1st pattern----
 # 3rd pattern - use this - wave pattern
 # n_points is the number of points for the mclaren logo
 n_points  <- 84
@@ -101,7 +103,7 @@ lapply(1:(n_points+1), function(x) {
 # anim_save("choose_a_name.gif")
 
 
-# 6 McLaren dots in grid----
+# **5.1.1 McLaren dots in grid----
 
 # images/icons for halloween animation
 jack_o_lantern_img <- here("00_raw_data", "lantern_48.png")
@@ -117,7 +119,8 @@ df_x <- df %>%
 # x variable from the rescaled McLaren logo coordinates
 new_df_x <- grid_mclaren_simple_rescale %>% 
   select(x) %>% 
-  rename(new_x = x)
+  rename(new_x = x) %>% 
+  slice(1:83)
 
 # https://stackoverflow.com/questions/66434941/make-a-column-based-a-repetitive-numbers-that-follows-another-column
 # transpose new McLaren x-cordinates to same length as square pattern
@@ -127,7 +130,7 @@ df_x_rep <- df_x %>%
   slice(1:599760)
 
 # y variable
-# x variable from the square pattern
+# y variable from the square pattern
 df_y <- df %>% 
   select(y) %>% 
   rename(original_y = y)
@@ -186,7 +189,7 @@ mclaren_points_yes_no <- mclaren_points_no %>%
   bind_rows(mclaren_points_yes) %>% 
   arrange(row)
 
-# *6.1 Animate McLaren pins----
+# **5.1.2 Animate McLaren pins----
 # plot and animate
 mclaren_pins_animate <- mclaren_points_yes %>% 
   ggplot() +
@@ -216,7 +219,7 @@ animate(mclaren_pins_animate, fps=10)
 # animation save
 anim_save("./04_gifs/mclaren_pins_animate.gif", height = 372, width = 538, units = "px")
 
-# *6.2 Animate McLaren Halloween pins----
+# **5.1.3 Animate McLaren Halloween pins----
 mclaren_pins_animate_halloween <- mclaren_points_yes %>% 
   ggplot() +
   geom_spoke(aes(x=x, y=y, angle = angle), radius = 1, colour = '#FF8000') +
@@ -248,8 +251,161 @@ animate(mclaren_pins_animate_halloween, fps=5)
 # animation save
 anim_save("./04_gifs/mclaren_pins_animate_halloween.gif", height = 372, width = 538, units = "px")
 
+# *5.2 2nd pattern----
+# 2nd pattern 
+# n_points is the number of points for the mclaren logo
+n_points  <- 10
+closeness <- 0
+speed     <- 2*pi/n_points
+v_angles <- seq(0, by=pi/2, length.out = n_points)
+
+# This function creates a grid of vectors (coordinates and angle)
+# using a initial vector of angles adding factor f each iteration
+create_grid <- function(n, a, f) {
+  lapply(seq_len(n), function (x) {a+f*(x-1)}) %>% 
+    do.call("rbind", .) %>% 
+    melt(varnames=c('x', 'y'), value.name="angle")
+}
+
+# This is what makes to spin the pins - inspect the structure of the output -> df 
+lapply(1:(n_points+1), function(x) {
+  create_grid(n_points, 
+              v_angles+(x-1)*speed,
+              closeness)}) %>% 
+  as.list(.) %>% 
+  rbindlist(idcol="frame") -> df
+
+# images/icons for icons rotating
+lando_logo <- image_read(here("00_raw_data", "lando_logo512.png")) %>% 
+  image_crop(geometry = "-10") %>% 
+  image_scale("x960") %>% 
+  image_write(here("00_raw_data", "lando_logo_magick.png"), format = "png", quality = 75)
+
+print(lando_logo)
+
+max_logo <- image_read(here("00_raw_data", "max_logo2.png")) %>% 
+  image_crop(geometry = "360x360+50") %>% 
+  image_scale("x960") %>% 
+  image_modulate(brightness = 80, saturation = 120, hue = 200) %>% 
+  image_write(here("00_raw_data", "max_logo_magick.png"), format = "png", quality = 75)
+
+print(max_logo)
+
+max_logo_svg <- image_read(here("00_raw_data", "max-verstappen.svg")) %>% 
+  image_crop(geometry = "450x350+100") %>%
+  #image_convert("png") %>% 
+  #image_fill('steelblue', fuzz = 0) %>% 
+  #image_colorize(opacity = 40, color = 'white') %>%
+  image_modulate(brightness = 80, saturation = 120, hue = 200) 
+#%>% 
+  image_write(here("00_raw_data", "max_logo_magick2.svg"), format = "svg", quality = 75)
+
+print(max_logo_svg)
+
+df <- df %>% 
+  mutate(label = case_when(y %% 2 == 0 ~ lando_logo,
+                           TRUE ~ max_logo)) 
+
+# **5.2.1 McLaren dots in grid----
+
+# x variable from the square pattern
+# df_x <- df %>% 
+#   select(x) %>% 
+#   rename(original_x = x)
+
+# new x - stepwise, single coordinates repeated n times
+# https://stackoverflow.com/questions/2894775/repeat-each-row-of-data-frame-the-number-of-times-specified-in-a-column
+# for n points = 83, freq = 83
+new_df_x <- grid_mclaren_simple_rescale %>%
+  #slice(1:10) %>% 
+  select(x) %>% 
+  mutate(freq = 83) %>% 
+  slice(rep(seq_len(n()), freq)) %>% 
+  select(-freq) 
+#%>% slice(1:6889)
+
+# for n points = 83, seq_len(83)
+# then repeat previous step n times
+df_x_rep <- purrr::map_dfr(seq_len(83), ~new_df_x)
+
+# y variable from the rescaled McLaren logo coordinates
+new_df_y <- grid_mclaren_simple_rescale %>%
+  #slice(1:10) %>%
+  select(y) %>% 
+  rename(new_y = y)
+
+# y variable from the square pattern
+df_y <- df %>%
+  select(y) %>%
+  rename(original_y = y)
+
+# https://stackoverflow.com/questions/66434941/make-a-column-based-a-repetitive-numbers-that-follows-another-column
+# transpose new McLaren x-cordinates to same length as square pattern
+df_y_rep <- df_y %>%
+  mutate(new_col = rep(list(new_df_y), n())) %>% 
+  unnest(new_col) %>% 
+  slice(1:578676)
+
+# bind new x and y's
+new_xy <- df_x_rep %>% 
+  bind_cols(df_y_rep) %>% 
+  select(x, new_y) %>% 
+  rename(y = new_y)
+
+# reclaim frame and angle variables from original square pattern
+df_frame_angle <- df %>% 
+  select(frame, angle)
+
+# bind frame, angle variables to new x,y variables
+# add row numbers in case needed later
+df_mclaren <- new_xy %>% 
+  bind_cols(df_frame_angle) %>% 
+  select(frame, x, y, angle) %>% 
+  mutate(row = row_number())
+
+# obtain just the coordinates for the McLaren data points
+# this data set could be used for input to ggplot/animate
+mclaren_points_yes <- df_mclaren %>%
+  inner_join(grid_mclaren_simple_rescale, by = c('x', 'y'), relationship = "many-to-many") %>% 
+  mutate(mclaren_point = 'yes') %>% 
+  filter(!duplicated(row)) 
+
+# **5.2.2 Animate McLaren pins----
+# plot and animate
+mclaren_pins_animate <- df %>% 
+  ggplot() +
+  #geom_spoke(aes(x=x, y=y, angle = angle), radius = 1, colour = '#FF8000') +
+  geom_image(aes(x+cos(angle), y+sin(angle), image = label)) +
+  #geom_point(aes(x+cos(angle), y+sin(angle)), size=3, colour = '#FF8000') +
+  #geom_text(aes(x+cos(angle), y+sin(angle), label = label), family = 'fontawesome-webfont') +
+  theme_void() +
+  darklyplot::theme_dark2() +
+  theme(legend.position = "none",
+        panel.grid = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.title.y = element_blank(),
+        axis.title.x = element_blank(),
+        plot.caption = element_text(size = 14, family = "alfa",hjust = 0.5, colour = '#B6BABD')) +
+  coord_fixed() +
+  transition_time(time=frame) +
+  #shadow_wake(0.15) +
+  labs(caption = "design by hey-jay")
+
+# animate
+animate(mclaren_pins_animate, fps=10)
+
+# animation save
+anim_save("./04_gifs/mclaren_pins_animate_lando_max.gif", height = 372, width = 538, units = "px")
+
+  
 
 
+
+# 8 original script----
 # 1st pattern
 n_points  <- 10
 closeness <- 2*pi/n_points
@@ -257,19 +413,19 @@ speed     <- 2*pi/n_points
 v_angles <- seq(0, 2*pi, length.out = n_points)
 
 # 2nd pattern
-n_points  <- 10
+n_points  <- 83
 closeness <- 0
 speed     <- 2*pi/n_points
 v_angles <- seq(0, by=pi/2, length.out = n_points)
 
 # 3rd pattern - use this
-n_points  <- 84
+n_points  <- 10
 closeness <- 2*pi/n_points
 speed     <- 2*pi/n_points
 v_angles <- seq(0, 0, length.out = n_points)
 
 # 4th pattern
-n_points  <- 84
+n_points  <- 10
 closeness <- pi/4
 speed     <- 2*pi/n_points
 v_angles <- seq(0, by=pi/4, length.out = n_points)
