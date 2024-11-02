@@ -69,7 +69,7 @@ p_mclaren_rescale <- grid_mclaren_simple_rescale %>%
 # *5.1 1st pattern----
 # 3rd pattern - use this - wave pattern
 # n_points is the number of points for the mclaren logo
-n_points  <- 84
+n_points  <- 83
 closeness <- 2*pi/n_points
 speed     <- 2*pi/n_points
 v_angles <- seq(0, 0, length.out = n_points)
@@ -95,7 +95,7 @@ lapply(1:(n_points+1), function(x) {
 # ggplot(df) +
 #   geom_spoke(aes(x=x, y=y, angle = angle), radius = 1) +
 #   geom_point(aes(x+cos(angle), y+sin(angle)), size=2) +
-#   theme_void() + 
+#   theme_void() +
 #   coord_fixed() +
 #   transition_time(time=frame)
 
@@ -106,7 +106,12 @@ lapply(1:(n_points+1), function(x) {
 # **5.1.1 McLaren dots in grid----
 
 # images/icons for halloween animation
-jack_o_lantern_img <- here("00_raw_data", "lantern_48.png")
+jack_o_lantern_img <- image_read(here("00_raw_data", "lantern_48.png")) %>% 
+  image_scale(geometry = "76") %>% 
+  image_convert('jpeg') %>% 
+  image_write(here("00_raw_data", "lantern_48_magick76.jpeg"), format = "jpeg")
+
+print(jack_o_lantern_img)
 bat_img <- here("00_raw_data", "bat.png")
 pumpkin_img <- here("00_raw_data", "pumpkin_48.png")
 ghost_img <- here("00_raw_data", "ghost_512.png")
@@ -117,7 +122,8 @@ df_x <- df %>%
   rename(original_x = x)
 
 # x variable from the rescaled McLaren logo coordinates
-new_df_x <- grid_mclaren_simple_rescale %>% 
+new_df_x <- grid_mclaren_simple_rescale %>%
+  #slice(1:10) %>%  
   select(x) %>% 
   rename(new_x = x) %>% 
   slice(1:83)
@@ -127,7 +133,7 @@ new_df_x <- grid_mclaren_simple_rescale %>%
 df_x_rep <- df_x %>%
   mutate(new_col = rep(list(new_df_x), n())) %>% 
   unnest(new_col) %>% 
-  slice(1:599760)
+  slice(1:578676)
 
 # y variable
 # y variable from the square pattern
@@ -139,12 +145,13 @@ df_y <- df %>%
 # https://stackoverflow.com/questions/2894775/repeat-each-row-of-data-frame-the-number-of-times-specified-in-a-column
 new_df_y <- grid_mclaren_simple_rescale %>%
   select(y) %>% 
-  mutate(freq = 84) %>% 
+  slice(1:83) %>% 
+  mutate(freq = 83) %>% 
   slice(rep(seq_len(n()), freq)) %>% 
   select(-freq)
 
 # then repeat previous step n times
-df_y_rep <- purrr::map_dfr(seq_len(85), ~new_df_y)
+df_y_rep <- purrr::map_dfr(seq_len(84), ~new_df_y)
 
 # bind new x and y's
 new_xy <- df_x_rep %>% 
@@ -246,15 +253,16 @@ mclaren_pins_animate_halloween <- mclaren_points_yes %>%
   labs(title = "Happy Halloween", caption = "design by hey-jay")
 
 # animate
-animate(mclaren_pins_animate_halloween, fps=5)
+animate(mclaren_pins_animate_halloween, fps=3, height = 600, width = 600)
 
 # animation save
-anim_save("./04_gifs/mclaren_pins_animate_halloween.gif", height = 372, width = 538, units = "px")
+anim_save("./04_gifs/mclaren_pins_animate_halloween.gif")
+anim_save("./04_gifs/mclaren_pins_animate_halloween.gif", height = 600, width = 600, units = "px")
 
 # *5.2 2nd pattern----
 # 2nd pattern 
 # n_points is the number of points for the mclaren logo
-n_points  <- 10
+n_points  <- 6
 closeness <- 0
 speed     <- 2*pi/n_points
 v_angles <- seq(0, by=pi/2, length.out = n_points)
@@ -296,15 +304,45 @@ max_logo_svg <- image_read(here("00_raw_data", "max-verstappen.svg")) %>%
   #image_convert("png") %>% 
   #image_fill('steelblue', fuzz = 0) %>% 
   #image_colorize(opacity = 40, color = 'white') %>%
-  image_modulate(brightness = 80, saturation = 120, hue = 200) 
-#%>% 
+  image_modulate(brightness = 80, saturation = 120, hue = 200) %>% 
   image_write(here("00_raw_data", "max_logo_magick2.svg"), format = "svg", quality = 75)
 
 print(max_logo_svg)
 
+# https://cloudconvert.com
+max_helmet <- image_read(here("00_raw_data", "max_helmet.png")) %>% 
+  image_crop(geometry = "650x650+180") %>%
+  image_scale(geometry = "144") %>% 
+  image_write(here("00_raw_data", "max_helmet_magick.png"), format = "png")
+
+print(max_helmet)
+
+max_helmet_jpeg <- image_read(here("00_raw_data", "max_helmet.png")) %>% 
+  image_crop(geometry = "650x650+180") %>%
+  image_scale(geometry = "144") %>% 
+  image_convert('jpeg') %>% 
+  image_write(here("00_raw_data", "max_helmet_magick.jpeg"), format = "jpeg")
+
+print(max_helmet_jpeg)
+
+lando_helmet <- image_read(here("00_raw_data", "lando_helmet.png")) %>% 
+  image_crop(geometry = "680x680+170") %>%
+  image_scale(geometry = "144") %>% 
+  image_write(here("00_raw_data", "lando_helmet_magick.png"), format = "png") 
+  
+print(lando_helmet)
+
+lando_helmet_jpeg <- image_read(here("00_raw_data", "lando_helmet.png")) %>% 
+  image_crop(geometry = "650x650+180") %>%
+  image_scale(geometry = "144") %>%
+  image_convert('jpeg') %>% 
+  image_write(here("00_raw_data", "lando_helmet_magick.jpeg"), format = "jpeg")
+
+print(lando_helmet_jpeg)
+
 df <- df %>% 
-  mutate(label = case_when(y %% 2 == 0 ~ lando_logo,
-                           TRUE ~ max_logo)) 
+  mutate(label = case_when(x %% 2 == 0 ~ lando_helmet,
+                           TRUE ~ max_helmet)) 
 
 # **5.2.1 McLaren dots in grid----
 
@@ -375,12 +413,13 @@ mclaren_points_yes <- df_mclaren %>%
 mclaren_pins_animate <- df %>% 
   ggplot() +
   #geom_spoke(aes(x=x, y=y, angle = angle), radius = 1, colour = '#FF8000') +
-  geom_image(aes(x+cos(angle), y+sin(angle), image = label)) +
+  geom_image(aes(x+cos(angle), y+sin(angle), image = label), size = 0.1) +
   #geom_point(aes(x+cos(angle), y+sin(angle)), size=3, colour = '#FF8000') +
   #geom_text(aes(x+cos(angle), y+sin(angle), label = label), family = 'fontawesome-webfont') +
   theme_void() +
   darklyplot::theme_dark2() +
   theme(legend.position = "none",
+        plot.margin = unit(c(5, 5, 5, 5), "pt"),
         panel.grid = element_blank(),
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
@@ -389,22 +428,19 @@ mclaren_pins_animate <- df %>%
         axis.text.y = element_blank(),
         axis.title.y = element_blank(),
         axis.title.x = element_blank(),
-        plot.caption = element_text(size = 14, family = "alfa",hjust = 0.5, colour = '#B6BABD')) +
+        plot.caption = element_text(size = 14, family = "alfa",hjust = 0.5, colour = '#FF87BC')) +
   coord_fixed() +
   transition_time(time=frame) +
   #shadow_wake(0.15) +
   labs(caption = "design by hey-jay")
 
 # animate
-animate(mclaren_pins_animate, fps=10)
+animate(mclaren_pins_animate, fps=10, height = 600, width = 600)
 
 # animation save
-anim_save("./04_gifs/mclaren_pins_animate_lando_max.gif", height = 372, width = 538, units = "px")
-
+#anim_save("./04_gifs/mclaren_pins_animate_lando_max.gif", height = 372, width = 538, units = "px")
+anim_save("./04_gifs/mclaren_pins_animate_lando_max2.gif")
   
-
-
-
 # 8 original script----
 # 1st pattern
 n_points  <- 10
